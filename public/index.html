@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status – eselbande.com</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:       #080810;
+            --surface:  rgba(255,255,255,0.03);
+            --surface2: rgba(255,255,255,0.06);
+            --border:   rgba(255,255,255,0.07);
+            --text:     #e2e8f0;
+            --muted:    #4a5568;
+            --up:       #10b981;
+            --down:     #ef4444;
+            --unknown:  #6b7280;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0 0 60px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 10%, rgba(102,126,234,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 90%, rgba(118,75,162,0.06) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Nav */
+        .topnav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            background: rgba(8,8,16,0.7);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1rem;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-links { display: flex; gap: 0.5rem; }
+        .nav-link {
+            padding: 0.35rem 0.9rem;
+            border-radius: 7px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .nav-link:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 3.5rem 1.5rem 2.5rem;
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .hero-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        /* Overall banner */
+        .banner {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 1.4rem;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+        .banner.all-up   { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #10b981; }
+        .banner.some-down { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3);  color: #ef4444; }
+        .banner.loading  { background: var(--surface); border-color: var(--border); color: var(--muted); }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        .dot.pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Grid */
+        .container { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .services { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
+
+        .service-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.1rem 1.4rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 1rem;
+            transition: border-color 0.2s;
+        }
+        .service-card:hover { border-color: rgba(255,255,255,0.12); }
+
+        .svc-icon { font-size: 1.4rem; }
+
+        .svc-info { min-width: 0; }
+        .svc-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .svc-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 1.2rem; flex-wrap: wrap; }
+
+        .svc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-up      { background: rgba(16,185,129,0.15); color: #10b981; }
+        .badge-down    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+        .badge-unknown { background: rgba(107,114,128,0.15); color: #9ca3af; }
+
+        /* Sparkline */
+        .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 24px; }
+        .spark-bar {
+            width: 6px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .spark-bar.up      { background: var(--up); opacity: 0.7; }
+        .spark-bar.down    { background: var(--down); opacity: 0.7; }
+        .spark-bar.unknown { background: var(--unknown); opacity: 0.4; }
+
+        /* Latency */
+        .latency-val { font-size: 0.78rem; color: var(--muted); }
+
+        /* Uptime row */
+        .uptime-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.15rem;
+        }
+        .uptime-item { font-size: 0.75rem; }
+        .uptime-item span { color: var(--text); font-weight: 600; }
+
+        /* Footer */
+        .refresh-note {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.78rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .service-card { grid-template-columns: auto 1fr; }
+            .svc-right { display: none; }
+            .topnav { padding: 0.8rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+<nav class="topnav">
+    <a class="nav-brand" href="https://eselbande.com">🫏 eselbande.com</a>
+    <div class="nav-links">
+        <a class="nav-link" href="https://go.eselbande.com">🔗 Links</a>
+        <a class="nav-link" href="https://files.eselbande.com">📁 Files</a>
+        <a class="nav-link" href="https://quotes.eselbande.com">💬 Zitate</a>
+    </div>
+</nav>
+
+<div class="hero">
+    <h1>Service Status</h1>
+    <p class="hero-sub" id="lastUpdated">Wird geladen…</p>
+    <div class="banner loading" id="overallBanner">
+        <div class="dot pulse"></div>
+        <span>Lade Status…</span>
+    </div>
+</div>
+
+<div class="container">
+    <p class="section-title">Dienste</p>
+    <div class="services" id="serviceList">
+        <!-- injected by JS -->
+    </div>
+    <p class="refresh-note">Aktualisiert sich automatisch alle 30 Sekunden · Checks alle 60 Sekunden</p>
+</div>
+
+<script>
+async function load() {
+    try {
+        const data = await fetch('/api/status').then(r => r.json());
+        render(data);
+    } catch {
+        document.getElementById('overallBanner').className = 'banner some-down';
+        document.getElementById('overallBanner').innerHTML = '<div class="dot"></div><span>Fehler beim Laden</span>';
+    }
+}
+
+function render(services) {
+    const configured = services.filter(s => s.configured);
+    const allUp = configured.every(s => s.status === 'up');
+    const anyDown = configured.some(s => s.status === 'down');
+
+    const banner = document.getElementById('overallBanner');
+    if (anyDown) {
+        banner.className = 'banner some-down';
+        banner.innerHTML = '<div class="dot"></div><span>Einige Dienste haben Probleme</span>';
+    } else if (allUp) {
+        banner.className = 'banner all-up';
+        banner.innerHTML = '<div class="dot pulse"></div><span>Alle Systeme laufen</span>';
+    } else {
+        banner.className = 'banner loading';
+        banner.innerHTML = '<div class="dot pulse"></div><span>Status unbekannt</span>';
+    }
+
+    document.getElementById('lastUpdated').textContent =
+        'Zuletzt aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
+
+    document.getElementById('serviceList').innerHTML = services.map(svc => {
+        const badgeClass = svc.status === 'up' ? 'badge-up' : svc.status === 'down' ? 'badge-down' : 'badge-unknown';
+        const badgeText  = svc.status === 'up' ? 'Online' : svc.status === 'down' ? 'Offline' : 'Unbekannt';
+        const dotClass   = svc.status === 'up' ? 'up' : svc.status === 'down' ? 'down' : 'unknown';
+
+        const latency = svc.latency != null ? `${svc.latency} ms` : '–';
+        const u24 = svc.uptime24h != null ? `${svc.uptime24h}%` : '–';
+        const u7  = svc.uptime7d  != null ? `${svc.uptime7d}%` : '–';
+
+        const sparkHTML = (svc.history || []).map(h => {
+            const cls = h.up ? 'up' : 'down';
+            const h24 = Math.min(24, Math.max(4, h.latency ? Math.round(h.latency / 20) : 4));
+            return `<div class="spark-bar ${cls}" style="height:${h24}px" title="${h.up ? 'Up' : 'Down'}${h.latency ? ' · ' + h.latency + 'ms' : ''}"></div>`;
+        }).join('');
+
+        return `
+        <div class="service-card">
+            <div class="svc-icon">${svc.icon}</div>
+            <div class="svc-info">
+                <div class="svc-name">${svc.name}</div>
+                <div class="svc-meta">
+                    <span>Latenz: <b>${latency}</b></span>
+                    <span>24h: <b style="color:${svc.uptime24h >= 99 ? '#10b981' : svc.uptime24h >= 90 ? '#f59e0b' : '#ef4444'}">${u24}</b></span>
+                    <span>7d: <b>${u7}</b></span>
+                </div>
+            </div>
+            <div class="svc-right">
+                <div class="status-badge ${badgeClass}">
+                    <div class="dot ${svc.status === 'up' ? 'pulse' : ''}"></div>
+                    ${badgeText}
+                </div>
+                <div class="sparkline">${sparkHTML || '<span style="font-size:.7rem;color:var(--muted)">Keine Daten</span>'}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+load();
+setInterval(load, 30_000);
+</script>
+</body>
+</html>
