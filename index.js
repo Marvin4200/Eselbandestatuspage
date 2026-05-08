@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const compression = require('compression');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
@@ -120,8 +121,11 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        res.setHeader('Content-Security-Policy',
+            "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'");
     next();
 });
+app.use(compression());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -168,3 +172,10 @@ app.get('/api/status', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`[status.eselbande.com] Running on port ${PORT}`));
+
+// ── 404 & Error handlers ─────────────────────────────────────────────────────
+app.use((req, res) => res.status(404).json({ error: 'Nicht gefunden', path: req.path }));
+app.use((err, req, res, next) => {
+    console.error('[ERROR]', err.message);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+});
