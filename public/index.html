@@ -141,6 +141,38 @@
         .svc-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.2rem; }
         .svc-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 1.2rem; flex-wrap: wrap; }
 
+        .uptime-chart-wrap {
+            margin-top: 0.55rem;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+        .uptime-chart-label {
+            font-size: 0.68rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            min-width: 34px;
+        }
+        .uptime-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            min-height: 16px;
+            flex-wrap: nowrap;
+        }
+        .uptime-day {
+            width: 4px;
+            height: 12px;
+            border-radius: 2px;
+            background: var(--unknown);
+            opacity: 0.45;
+            flex-shrink: 0;
+        }
+        .uptime-day.good { background: var(--up); opacity: 0.8; }
+        .uptime-day.warn { background: #f59e0b; opacity: 0.8; }
+        .uptime-day.bad { background: var(--down); opacity: 0.8; }
+
         .svc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; }
 
         .status-badge {
@@ -193,6 +225,7 @@
             .service-card { grid-template-columns: auto 1fr; }
             .svc-right { display: none; }
             .topnav { padding: 0.8rem 1rem; }
+            .uptime-chart { max-width: 100%; overflow-x: auto; padding-bottom: 2px; }
         }
     </style>
 </head>
@@ -261,13 +294,21 @@ function render(services) {
         const dotClass   = svc.status === 'up' ? 'up' : svc.status === 'down' ? 'down' : 'unknown';
 
         const latency = svc.latency != null ? `${svc.latency} ms` : '–';
+        const latencyAvg = svc.latencyAvg30 != null ? `${svc.latencyAvg30} ms` : '–';
         const u24 = svc.uptime24h != null ? `${svc.uptime24h}%` : '–';
         const u7  = svc.uptime7d  != null ? `${svc.uptime7d}%` : '–';
+        const u30 = svc.uptime30d != null ? `${svc.uptime30d}%` : '–';
 
         const sparkHTML = (svc.history || []).map(h => {
             const cls = h.up ? 'up' : 'down';
             const h24 = Math.min(24, Math.max(4, h.latency ? Math.round(h.latency / 20) : 4));
             return `<div class="spark-bar ${cls}" style="height:${h24}px" title="${h.up ? 'Up' : 'Down'}${h.latency ? ' · ' + h.latency + 'ms' : ''}"></div>`;
+        }).join('');
+
+        const dailyHTML = (svc.dailyUptime || []).map(d => {
+            const cls = d.pct == null ? '' : d.pct >= 99 ? 'good' : d.pct >= 95 ? 'warn' : 'bad';
+            const label = d.pct == null ? `${d.day}: Keine Daten` : `${d.day}: ${d.pct}%`;
+            return `<div class="uptime-day ${cls}" title="${label}"></div>`;
         }).join('');
 
         return `
@@ -277,8 +318,14 @@ function render(services) {
                 <div class="svc-name">${svc.name}</div>
                 <div class="svc-meta">
                     <span>Latenz: <b>${latency}</b></span>
+                    <span>Ø30: <b>${latencyAvg}</b></span>
                     <span>24h: <b style="color:${svc.uptime24h >= 99 ? '#10b981' : svc.uptime24h >= 90 ? '#f59e0b' : '#ef4444'}">${u24}</b></span>
                     <span>7d: <b>${u7}</b></span>
+                    <span>30d: <b>${u30}</b></span>
+                </div>
+                <div class="uptime-chart-wrap">
+                    <span class="uptime-chart-label">30T</span>
+                    <div class="uptime-chart">${dailyHTML || '<span style="font-size:.7rem;color:var(--muted)">Keine Daten</span>'}</div>
                 </div>
             </div>
             <div class="svc-right">

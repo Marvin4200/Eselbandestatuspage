@@ -76,6 +76,42 @@ function recentChecks(serviceId, limit = 30) {
     return db.prepare('SELECT up, latency FROM checks WHERE service = ? ORDER BY ts DESC LIMIT ?').all(serviceId, limit).reverse();
 }
 
+function latencyAvgFromHistory(history) {
+    const values = history.filter(h => h.latency != null).map(h => h.latency);
+    if (!values.length) return null;
+    return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+}
+
+function uptimeDaily(serviceId, days = 30) {
+    const startTs = Date.now() - days * 24 * 60 * 60 * 1000;
+    const rows = db.prepare(`
+        SELECT
+            strftime('%Y-%m-%d', ts / 1000, 'unixepoch') AS day,
+            COUNT(*) AS total,
+            SUM(up) AS upCount
+        FROM checks
+        WHERE service = ? AND ts >= ?
+        GROUP BY day
+    `).all(serviceId, startTs);
+
+    const byDay = new Map(rows.map(r => [r.day, r]));
+    const out = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        const key = d.toISOString().slice(0, 10);
+        const row = byDay.get(key);
+        if (!row || !row.total) {
+            out.push({ day: key, pct: null });
+            continue;
+        }
+        const pct = Math.round((row.upCount / row.total) * 1000) / 10;
+        out.push({ day: key, pct });
+    }
+
+    return out;
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
@@ -85,10 +121,24 @@ app.get('/health', (req, res) => res.json({ status: 'ok', service: 'statuspage',
 app.get('/api/status', (req, res) => {
     const data = SERVICES.map(svc => {
         if (!svc.url) {
-            return { id: svc.id, name: svc.name, icon: svc.icon, configured: false, status: 'unknown', latency: null, uptime24h: null, uptime7d: null, history: [] };
+            return {
+                id: svc.id,
+                name: svc.name,
+                icon: svc.icon,
+                configured: false,
+                status: 'unknown',
+                latency: null,
+                latencyAvg30: null,
+                uptime24h: null,
+                uptime7d: null,
+                uptime30d: null,
+                history: [],
+                dailyUptime: []
+            };
         }
         const latest = db.prepare('SELECT up, latency, ts FROM checks WHERE service = ? ORDER BY ts DESC LIMIT 1').get(svc.id);
         const status = !latest ? 'unknown' : latest.up ? 'up' : 'down';
+        const history = recentChecks(svc.id, 30);
         return {
             id: svc.id,
             name: svc.name,
@@ -96,10 +146,13 @@ app.get('/api/status', (req, res) => {
             configured: true,
             status,
             latency: latest?.latency ?? null,
+            latencyAvg30: latencyAvgFromHistory(history),
             lastCheck: latest?.ts ?? null,
             uptime24h: uptimePct(svc.id, 24 * 60 * 60 * 1000),
             uptime7d:  uptimePct(svc.id, 7  * 24 * 60 * 60 * 1000),
-            history: recentChecks(svc.id, 30),
+            uptime30d: uptimePct(svc.id, 30 * 24 * 60 * 60 * 1000),
+            history,
+            dailyUptime: uptimeDaily(svc.id, 30),
         };
     });
     res.json(data);
