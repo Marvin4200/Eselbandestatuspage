@@ -10,15 +10,16 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg:       #080810;
-            --surface:  rgba(255,255,255,0.03);
-            --surface2: rgba(255,255,255,0.06);
-            --border:   rgba(255,255,255,0.07);
-            --text:     #e2e8f0;
-            --muted:    #4a5568;
-            --up:       #10b981;
-            --down:     #ef4444;
-            --unknown:  #6b7280;
+            --bg:           #080810;
+            --surface:      rgba(255,255,255,0.04);
+            --surface2:     rgba(255,255,255,0.07);
+            --border:       rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.14);
+            --text:         #e2e8f0;
+            --muted:        #64748b;
+            --up:           #10b981;
+            --down:         #ef4444;
+            --unknown:      #6b7280;
         }
 
         body {
@@ -71,7 +72,7 @@
             border: 1px solid var(--border);
             transition: color 0.2s, border-color 0.2s;
         }
-        .nav-link:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+        .nav-link:hover { color: var(--text); border-color: var(--border-hover); }
 
         /* Hero */
         .hero {
