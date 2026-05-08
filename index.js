@@ -33,6 +33,7 @@ const SERVICES = [
     { id: 'team',          name: 'Team-Seite',       icon: '👥', url: process.env.TEAM_HEALTH_URL          || 'http://localhost:3014/health' },
     { id: 'zitatboard',    name: 'Zitat-Board',      icon: '💬', url: process.env.ZITATBOARD_HEALTH_URL    || 'http://localhost:3013/health' },
     { id: 'statuspage',    name: 'Status-Page',      icon: '📡', url: process.env.STATUSPAGE_HEALTH_URL    || 'http://localhost:3012/health' },
+    { id: 'esel',          name: 'Esel-Seite',       icon: '🫏', url: process.env.ESEL_HEALTH_URL           || 'http://localhost:3015/health' },
 ];
 
 // ── Check logic ───────────────────────────────────────────────────────────────
