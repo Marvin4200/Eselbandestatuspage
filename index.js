@@ -30,6 +30,9 @@ const SERVICES = [
     { id: 'linkshortener', name: 'Link-Shortener',   icon: '🔗', url: process.env.LINKSHORTENER_HEALTH_URL|| 'http://localhost:3010/health' },
     { id: 'filehoster',    name: 'File-Hoster',      icon: '📁', url: process.env.FILEHOSTER_HEALTH_URL   || 'http://localhost:3011/health' },
     { id: 'eselmusic',     name: 'EselMusic Bot',    icon: '🎵', url: process.env.ESELMUSIC_HEALTH_URL    || null },
+    { id: 'team',          name: 'Team-Seite',       icon: '👥', url: process.env.TEAM_HEALTH_URL          || 'http://localhost:3014/health' },
+    { id: 'zitatboard',    name: 'Zitat-Board',      icon: '💬', url: process.env.ZITATBOARD_HEALTH_URL    || 'http://localhost:3013/health' },
+    { id: 'statuspage',    name: 'Status-Page',      icon: '📡', url: process.env.STATUSPAGE_HEALTH_URL    || 'http://localhost:3012/health' },
 ];
 
 // ── Check logic ───────────────────────────────────────────────────────────────
