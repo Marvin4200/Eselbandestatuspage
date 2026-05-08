@@ -34,6 +34,7 @@ const SERVICES = [
     { id: 'zitatboard',    name: 'Zitat-Board',      icon: '💬', url: process.env.ZITATBOARD_HEALTH_URL    || 'http://localhost:3013/health' },
     { id: 'statuspage',    name: 'Status-Page',      icon: '📡', url: process.env.STATUSPAGE_HEALTH_URL    || 'http://localhost:3012/health' },
     { id: 'esel',          name: 'Esel-Seite',       icon: '🫏', url: process.env.ESEL_HEALTH_URL           || 'http://localhost:3015/health' },
+    { id: 'error404',      name: '404-Seite',        icon: '🚧', url: process.env.ERROR404_HEALTH_URL       || 'https://404.eselbande.com/health' },
 ];
 
 // ── Check logic ───────────────────────────────────────────────────────────────
