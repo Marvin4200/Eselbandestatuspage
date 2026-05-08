@@ -114,6 +114,15 @@ function uptimeDaily(serviceId, days = 30) {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 const app = express();
+
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'statuspage', uptime: process.uptime() }));
