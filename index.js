@@ -44,16 +44,17 @@ const INSERT = db.prepare('INSERT INTO checks (service, ts, up, latency) VALUES 
 async function checkService(svc) {
     if (!svc.url) return;
     const start = Date.now();
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
     try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
         const res = await fetch(svc.url, { signal: ctrl.signal });
-        clearTimeout(timer);
         const latency = Date.now() - start;
         const up = res.ok ? 1 : 0;
         INSERT.run(svc.id, Date.now(), up, latency);
     } catch {
         INSERT.run(svc.id, Date.now(), 0, null);
+    } finally {
+        clearTimeout(timer);
     }
 }
 
@@ -64,7 +65,8 @@ async function checkAll() {
 }
 
 checkAll();
-setInterval(checkAll, 60_000);
+const healthInterval = setInterval(checkAll, 60_000);
+healthInterval.unref();
 
 // ── Uptime helper ─────────────────────────────────────────────────────────────
 function uptimePct(serviceId, sinceMs) {
@@ -171,11 +173,23 @@ app.get('/api/status', (req, res) => {
     res.json(data);
 });
 
-app.listen(PORT, () => console.log(`[status.eselbande.com] Running on port ${PORT}`));
-
 // ── 404 & Error handlers ─────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ error: 'Nicht gefunden', path: req.path }));
 app.use((err, req, res, next) => {
     console.error('[ERROR]', err.message);
     res.status(500).json({ error: 'Interner Serverfehler' });
 });
+
+const server = app.listen(PORT, () => console.log(`[status.eselbande.com] Running on port ${PORT}`));
+
+function shutdown(signal) {
+    console.log(`[SHUTDOWN] ${signal} received`);
+    clearInterval(healthInterval);
+    server.close(() => {
+        try { db.close(); } catch (_) { }
+        process.exit(0);
+    });
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
