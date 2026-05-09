@@ -24,6 +24,13 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_checks_service_ts ON checks(service, ts);
 `);
 
+const IS_DOCKER = fs.existsSync('/.dockerenv');
+const DOCKER_HOST_PORT_FALLBACKS = new Map([
+    ['3002', '3102'],
+    ['3000', '3100'],
+    ['3020', '3181'],
+]);
+
 // ── Services config ───────────────────────────────────────────────────────────
 const SERVICES = [
     { id: 'fahrstuhl',     name: 'Fahrstuhl Bot',   icon: '🚀', url: process.env.FAHRSTUHL_HEALTH_URL    || 'http://localhost:3002/health' },
@@ -43,19 +50,54 @@ const INSERT = db.prepare('INSERT INTO checks (service, ts, up, latency) VALUES 
 
 async function checkService(svc) {
     if (!svc.url) return;
-    const start = Date.now();
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 5000);
-    try {
-        const res = await fetch(svc.url, { signal: ctrl.signal });
-        const latency = Date.now() - start;
-        const up = res.ok ? 1 : 0;
-        INSERT.run(svc.id, Date.now(), up, latency);
-    } catch {
-        INSERT.run(svc.id, Date.now(), 0, null);
-    } finally {
-        clearTimeout(timer);
+
+    const candidates = [svc.url];
+
+    // In Docker, localhost inside the container is often not the host where services run.
+    if (IS_DOCKER) {
+        try {
+            const u = new URL(svc.url);
+            if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+                const dockerHostUrl = new URL(svc.url);
+                dockerHostUrl.hostname = 'host.docker.internal';
+                candidates.push(dockerHostUrl.toString());
+            }
+
+            const fallbackPort = DOCKER_HOST_PORT_FALLBACKS.get(u.port);
+            const hostLike = u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === 'host.docker.internal';
+            if (hostLike && fallbackPort) {
+                const fallbackUrl = new URL(svc.url);
+                fallbackUrl.hostname = 'host.docker.internal';
+                fallbackUrl.port = fallbackPort;
+                candidates.push(fallbackUrl.toString());
+            }
+        } catch {
+            // Ignore malformed URLs and let fetch fail below.
+        }
     }
+
+    let lastLatency = null;
+    for (const target of candidates) {
+        const start = Date.now();
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        try {
+            const res = await fetch(target, { signal: ctrl.signal });
+            const latency = Date.now() - start;
+            lastLatency = latency;
+            if (res.ok) {
+                INSERT.run(svc.id, Date.now(), 1, latency);
+                clearTimeout(timer);
+                return;
+            }
+        } catch {
+            // Try next candidate URL.
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    INSERT.run(svc.id, Date.now(), 0, lastLatency);
 }
 
 async function checkAll() {
