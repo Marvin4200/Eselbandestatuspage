@@ -11,6 +11,41 @@ const PORT = process.env.PORT || 3012;
 const DB_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
 
+
+// ── Admin-Log ─────────────────────────────────────────────────────────────────
+// Faengt ab, was sonst nur im Container-Log verschwaende: unbehandelte
+// Fehler und Promise-Rejections landen jetzt sichtbar auf admin.eselbande.com,
+// zusaetzlich zu console.error. Best effort - ein Log-Sendefehler darf den
+// Dienst selbst nie beeintraechtigen.
+const ADMIN_LOG_URL = (process.env.ADMIN_LOG_URL || '').replace(/\/+$/, '');
+const LOG_INGEST_TOKEN = process.env.LOG_INGEST_TOKEN || '';
+
+async function logAdmin(type, title, description, color, fields) {
+    if (!ADMIN_LOG_URL || !LOG_INGEST_TOKEN) return;
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        await fetch(`${ADMIN_LOG_URL}/api/logs/ingest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Log-Token': LOG_INGEST_TOKEN },
+            body: JSON.stringify({ source: 'statuspage', type, title, description, color, fields }),
+            signal: controller.signal,
+        }).catch(() => {});
+        clearTimeout(timer);
+    } catch { /* siehe oben */ }
+}
+
+process.on('uncaughtException', (err) => {
+    console.error('[uncaughtException]', err);
+    logAdmin('ERRORS', '\u{1F4A5} Uncaught Exception', `${err?.message || err}\n\`\`\`${String(err?.stack || '').slice(0, 1500)}\`\`\``, 0xED4245);
+});
+process.on('unhandledRejection', (reason) => {
+    console.error('[unhandledRejection]', reason);
+    logAdmin('ERRORS', '\u{1F4A5} Unhandled Rejection', String(reason?.stack || reason).slice(0, 1500), 0xED4245);
+});
+logAdmin('SYSTEM', '\u{1F680} statuspage gestartet', `Prozess laeuft, PID ${process.pid}.`, 0x57F287);
+
+
 const db = new Database(path.join(DB_DIR, 'status.db'));
 db.pragma('journal_mode = WAL');
 db.exec(`
